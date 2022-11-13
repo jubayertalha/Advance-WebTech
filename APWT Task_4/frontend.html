@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+    <head>
+        <title>Basic API</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    </head>
+    <body>
+        <div class="jumbotron text-center">
+            <h1>Job Portal</h1>
+            <p>Get your desired job.</p> 
+        </div>
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-4" style="background-color:lavender;">
+                    <h2>Add Job</h2>
+                    <div class="form-group row">
+                        <div style="width:inherit; margin: 10px 10px 0px 10px;">
+                            <input type="text" class="form-control" id="job_title" placeholder="Add Job Title">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div style="width:inherit; margin: 5px 10px 0px 10px;">
+                            <textarea class="form-control" style="resize: none;" rows="5" id="job_description"  placeholder="Add Job Description"></textarea>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" style="margin: 0px 0px 15px 0px;" id="add_job">Add Job</button>
+                </div>
+                <div class="col-sm-8">
+                    <div style="margin: 15px 0px 0px 0px;">
+                        <h2 style="display: inline;">Job List</h2>
+                        <h4 id="job_count" style="display: inline; color:burlywood;"></h4>
+                    </div>
+                    <div id="job_list" style="margin: 20px 10px 10px 10px;"></div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        $(document).ready(function(){
+            $.ajax({
+                url: "http://localhost:8000/api/job-posts",
+                type: "GET",
+                success: function(data){
+                    console.log(data);
+                    for(var i=data.length-1; i>=0; i--){
+                        $("#job_list").append(
+                            '<div id=panel'+data[i].id+' class="panel panel-success" style="width:inherit;">'+
+                                '<div class="panel-heading">'+
+                                    '<h4  style="display: inline;">#'+data[i].id+'</h4>'+
+                                    '<h3  style="display: inline;">'+data[i].title+'</h3>'+
+                                    '<button style="display: inline; float: right;" class="btn btn-danger" id="'+data[i].id+'">Delete</button>'+
+                                '</div>'+
+                                '<div class="panel-body">'+
+                                    '<h5>'+data[i].description+'</h5>'+
+                                '</div>'+
+                            '</div>'
+                        );
+                    }
+                    $("#job_count").text("("+data.length+")");
+                    check_jobs();
+                }
+            });
+            $("#add_job").click(function(){
+                var job_title = $("#job_title").val();
+                var job_description = $("#job_description").val();
+                $("#job_title").val("");
+                $("#job_description").val("");
+                $.ajax({
+                    url: "http://localhost:8000/api/job-posts",
+                    type: "POST",
+                    data: {
+                        title: job_title,
+                        description: job_description
+                    },
+                    success: function(data){
+                        console.log(data);
+                        $("#job_list").prepend(
+                            '<div id=panel'+data.id+' class="panel panel-success" style="width:inherit;">'+
+                                '<div class="panel-heading">'+
+                                    '<h4  style="display: inline;">#'+data.id+'</h4>'+
+                                    '<h3  style="display: inline;">'+data.title+'</h3>'+
+                                    '<button style="display: inline; float: right;" class="btn btn-danger" id="'+data.id+'">Delete</button>'+
+                                '</div>'+
+                                '<div class="panel-body">'+
+                                    '<h5>'+data.description+'</h5>'+
+                                '</div>'+
+                            '</div>'
+                        );
+                        var job_count = $("#job_count").text();
+                        job_count = job_count.substring(1, job_count.length-1);
+                        job_count = parseInt(job_count) + 1;
+                        $("#job_count").text("("+job_count+")");
+                        check_jobs();
+                    }
+                });
+            });
+            $(document).on('click', '.btn-danger', function(){
+                var id = $(this).attr('id');
+                $.ajax({
+                    url: "http://localhost:8000/api/job-posts/"+id,
+                    type: "DELETE",
+                    success: function(data){
+                        console.log(id);
+                        $("#panel"+id).remove();
+                        var job_count = $("#job_count").text();
+                        job_count = job_count.substring(1, job_count.length-1);
+                        job_count = parseInt(job_count) - 1;
+                        $("#job_count").text("("+job_count+")");
+                        check_jobs();
+                    }
+                });
+            });
+            function check_jobs(){
+                var job_count = $("#job_count").text();
+                job_count = job_count.substring(1, job_count.length-1);
+                job_count = parseInt(job_count);
+                if(job_count == 0){
+                    $("#job_list").append(
+                        '<div id="no_jobs" class="panel panel-danger" style="width:inherit;">'+
+                            '<div class="panel-heading" style="text-align: center">'+
+                                '<h3>No Jobs Available</h3>'+
+                            '</div>'+
+                        '</div>'
+                    );
+                }else{
+                    $("#no_jobs").remove();
+                }
+            }
+        });
+    </script>
+</html>
